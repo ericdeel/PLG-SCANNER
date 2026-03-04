@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>PLG Meter</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f3f2ff;color:#111827;min-height:100vh}
+    nav{background:#fff;border-bottom:1px solid #e5e7eb;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:30}
+    .logo{font-weight:800;font-size:18px;letter-spacing:-0.5px}
+    .nav-title{font-weight:700;font-size:12px;color:#6b7280;letter-spacing:1px;text-transform:uppercase}
+    #menu-btn{width:32px;height:32px;border-radius:8px;background:#f3f4f6;border:none;cursor:pointer;font-size:16px;position:relative;display:flex;align-items:center;justify-content:center}
+    #badge{position:absolute;top:-4px;right:-4px;background:#6366f1;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center}
+    .wrap{max-width:860px;margin:0 auto;padding:28px 20px}
+    .card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:20px;margin-bottom:16px}
+    label{font-size:14px;font-weight:500;display:block;margin-bottom:12px}
+    input[type=text]{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;font-size:13px;outline:none;margin-bottom:10px}
+    #drop{border:1.5px dashed #c4b5fd;border-radius:8px;padding:28px 16px;text-align:center;cursor:pointer;background:#faf9ff;min-height:80px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:13px}
+    #drop img{max-height:140px;border-radius:6px;max-width:100%}
+    #run-btn{width:100%;margin-top:12px;padding:11px;border-radius:8px;border:none;font-weight:600;font-size:14px;cursor:not-allowed;background:#e5e7eb;color:#9ca3af;transition:background .2s}
+    #run-btn.ready{background:#18181b;color:#fff;cursor:pointer}
+    #error{color:#ef4444;font-size:12px;margin-top:8px;display:none}
+    #loading{display:none;text-align:center;padding:36px 20px}
+    #loading p{color:#6b7280;font-size:14px;margin-top:8px}
+    #results{display:none}
+    .card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #e5e7eb}
+    .card-header span{font-weight:600;font-size:14px}
+    .toggle-btn{background:#f3f4f6;border:none;border-radius:6px;width:28px;height:28px;cursor:pointer;font-weight:700;font-size:16px;color:#6b7280}
+    #score-body{padding:20px;display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+    .tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .tag{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;background:#f3f4f6;border:1px solid #e5e7eb}
+    .summary-box{background:#fafafa;border-radius:8px;border:1px solid #e5e7eb;padding:12px 14px}
+    .summary-title{font-size:12px;font-weight:600;margin-bottom:6px}
+    .summary-text{font-size:12px;color:#6b7280;line-height:1.6}
+    .leak-card{background:#fffbeb;border-radius:12px;border:1px solid #fde68a;padding:14px 18px;margin-bottom:16px}
+    .leak-title{font-size:12px;font-weight:600;color:#92400e;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+    .leak-text{font-size:13px;color:#78350f;line-height:1.6}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+    .section-title{font-size:13px;font-weight:600;margin-bottom:14px}
+    .win-item{padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+    .win-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+    .win-title{font-size:13px;font-weight:600;margin-bottom:4px}
+    .win-action{font-size:12px;color:#6b7280;line-height:1.5}
+    .task-btn{flex-shrink:0;padding:5px 10px;border-radius:6px;border:1px solid #e5e7eb;background:#fff;font-size:11px;font-weight:500;cursor:pointer;white-space:nowrap}
+    .pillar-item{margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid #e5e7eb}
+    .pillar-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+    .pillar-name{font-size:13px;font-weight:600}
+    .bar-track{background:#f3f4f6;border-radius:4px;height:6px;margin:6px 0 4px;overflow:hidden}
+    .bar-fill{height:100%;border-radius:4px}
+    .bar-label{font-size:11px;color:#9ca3af;text-align:right;margin-bottom:6px}
+    .pillar-note{font-size:12px;color:#6b7280;margin:0 0 6px;line-height:1.5}
+    .pillar-pro{font-size:12px;color:#6b7280;display:flex;gap:6px;margin-bottom:3px}
+    .pillar-con{font-size:12px;color:#6b7280;display:flex;gap:6px}
+    /* Drawer */
+    #overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:40}
+    #drawer{position:fixed;top:0;right:0;height:100%;width:340px;background:#fff;z-index:50;box-shadow:-4px 0 24px rgba(0,0,0,0.12);transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column}
+    #drawer.open{transform:translateX(0)}
+    .drawer-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #e5e7eb}
+    .drawer-header span{font-weight:700;font-size:15px}
+    #close-drawer{background:none;border:none;font-size:20px;cursor:pointer;color:#6b7280}
+    #history-list{flex:1;overflow-y:auto;padding:16px}
+    .hist-empty{text-align:center;color:#9ca3af;font-size:13px;margin-top:40px}
+    .hist-item{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:box-shadow .15s}
+    .hist-item:hover{box-shadow:0 2px 10px rgba(0,0,0,0.08)}
+    .hist-info{flex:1;min-width:0}
+    .hist-name{font-weight:600;font-size:13px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .hist-leak{font-size:12px;color:#6b7280;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .hist-time{font-size:11px;color:#9ca3af;margin-top:4px}
+    @media(max-width:600px){.two-col{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="logo">deel.</span>
+  <span class="nav-title">PLG Meter</span>
+  <button id="menu-btn" onclick="openDrawer()">☰<span id="badge"></span></button>
+</nav>
+
+<div id="overlay" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <div class="drawer-header">
+    <span>Analysis history</span>
+    <button id="close-drawer" onclick="closeDrawer()">✕</button>
+  </div>
+  <div id="history-list">
+    <div class="hist-empty">📋<br><br>No scans yet. Run your first analysis!</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <label>Provide a link or drop a screenshot</label>
+    <input type="text" id="url-input" placeholder="https://yourproduct.com/pricing" oninput="onUrlInput()" onkeydown="if(event.key==='Enter')runAnalysis()"/>
+    <div id="drop" onclick="triggerFile()" ondrop="onDrop(event)" ondragover="event.preventDefault()">Drop a screenshot here</div>
+    <input type="file" id="file-input" accept="image/*" style="display:none" onchange="onFileChange(event)"/>
+    <p id="error"></p>
+    <button id="run-btn" onclick="runAnalysis()">Analyse PLG Score</button>
+  </div>
+
+  <div id="loading" class="card">
+    <div style="font-size:32px">🧠</div>
+    <p>Detecting page type and running PLG audit...</p>
+  </div>
+
+  <div id="results">
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="card-header">
+        <span>Your PLG Score</span>
+        <button class="toggle-btn" onclick="toggleScore()">−</button>
+      </div>
+      <div id="score-body">
+        <div id="main-donut"></div>
+        <div style="flex:1;min-width:200px">
+          <div class="tags" id="tags"></div>
+          <div class="summary-box">
+            <div class="summary-title">✦ Summary</div>
+            <div class="summary-text" id="summary-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="leak-card">
+      <div class="leak-title">⚠ Critical leak</div>
+      <div class="leak-text" id="leak-text"></div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="section-title">Quick wins</div>
+        <div id="wins-list"></div>
+      </div>
+      <div class="card">
+        <div class="section-title">PLG Pillar scores</div>
+        <div id="pillars-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PILLARS_WEB = [
+  {id:"value_prop",    label:"Value Proposition",    weight:15},
+  {id:"free_offer",    label:"Free Offer / Entry Point", weight:20},
+  {id:"signup_friction",label:"Signup Friction",       weight:15},
+  {id:"pricing",       label:"Pricing Transparency",   weight:15},
+  {id:"social_proof",  label:"Social Proof & Trust",   weight:10},
+  {id:"cta",           label:"CTA & Self-Serve Path",  weight:15},
+  {id:"upgrade",       label:"Upgrade Path",           weight:10},
+];
+const PILLARS_PROD = [
+  {id:"value_prop",      label:"Value Proposition",    weight:10},
+  {id:"onboard_friction",label:"Onboarding Friction",  weight:20},
+  {id:"time_to_value",   label:"Time to Value (Aha)",  weight:25},
+  {id:"onboard_guide",   label:"Onboarding Guidance",  weight:20},
+  {id:"trust",           label:"Trust Signals",        weight:10},
+  {id:"upgrade_cta",     label:"Upgrade CTAs",         weight:10},
+  {id:"retention",       label:"Retention Hooks",      weight:5},
+];
+const MATURITY = [
+  {max:30,  label:"Critical",   color:"#ef4444"},
+  {max:50,  label:"Early",      color:"#f97316"},
+  {max:70,  label:"Developing", color:"#eab308"},
+  {max:85,  label:"Good",       color:"#22c55e"},
+  {max:101, label:"Elite",      color:"#6366f1"},
+];
+
+let mode = "url", imgB64 = null, scoreCollapsed = false, history = [];
+
+function getMat(s) { return MATURITY.find(m => s <= m.max) || MATURITY[4]; }
+function pColor(s) { return s >= 70 ? "#22c55e" : s >= 40 ? "#eab308" : "#ef4444"; }
+
+function donutSVG(score, size, sw, fs, showLabel) {
+  const mat = getMat(score), c = size / 2, r = c - sw;
+  const circ = 2 * Math.PI * r, dash = (score / 100) * circ;
+  return `<div style="position:relative;width:${size}px;height:${size}px;flex-shrink:0">
+    <svg width="${size}" height="${size}" style="transform:rotate(-90deg)">
+      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="#e5e7eb" stroke-width="${sw}"/>
+      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${mat.color}" stroke-width="${sw}" stroke-dasharray="${dash} ${circ}" stroke-linecap="round"/>
+    </svg>
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
+      <span style="font-size:${fs}px;font-weight:800;color:#111827;line-height:1">${score}</span>
+      ${showLabel ? `<span style="font-size:${Math.round(fs * 0.38)}px;font-weight:600;color:${mat.color};margin-top:3px">${mat.label}</span>` : ""}
+    </div>
+  </div>`;
+}
+
+function onUrlInput() {
+  imgB64 = null;
+  const drop = document.getElementById("drop");
+  drop.innerHTML = "Drop a screenshot here";
+  mode = "url";
+  updateBtn();
+}
+function triggerFile() { if (!imgB64) document.getElementById("file-input").click(); }
+function onFileChange(e) { loadFile(e.target.files[0]); }
+function onDrop(e) {
+  e.preventDefault();
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith("image/")) loadFile(f);
+}
+function loadFile(f) {
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    imgB64 = ev.target.result.split(",")[1];
+    mode = "image";
+    document.getElementById("drop").innerHTML = `<img src="${ev.target.result}"/>`;
+    updateBtn();
+  };
+  r.readAsDataURL(f);
+}
+function updateBtn() {
+  const url = document.getElementById("url-input").value;
+  const ok = (mode === "url" && url.length > 5) || (mode === "image" && imgB64);
+  const btn = document.getElementById("run-btn");
+  btn.className = ok ? "ready" : "";
+  btn.disabled = !ok;
+}
+function toggleScore() {
+  scoreCollapsed = !scoreCollapsed;
+  document.getElementById("score-body").style.display = scoreCollapsed ? "none" : "flex";
+  document.querySelector(".toggle-btn").textContent = scoreCollapsed ? "+" : "−";
+}
+function openDrawer() {
+  document.getElementById("drawer").classList.add("open");
+  document.getElementById("overlay").style.display = "block";
+}
+function closeDrawer() {
+  document.getElementById("drawer").classList.remove("open");
+  document.getElementById("overlay").style.display = "none";
+}
+
+function buildPrompt() {
+  const webEx = PILLARS_WEB.map(p => `"${p.id}":{"score":70,"pro":"x","con":"x","note":"x"}`).join(",");
+  const prodEx = PILLARS_PROD.map(p => `"${p.id}":{"score":70,"pro":"x","con":"x","note":"x"}`).join(",");
+  const webP = PILLARS_WEB.map(p => `${p.id}(${p.label})`).join(",");
+  const prodP = PILLARS_PROD.map(p => `${p.id}(${p.label})`).join(",");
+  const src = mode === "image" ? "Screenshot attached." : "URL: " + document.getElementById("url-input").value;
+  return `PLG expert. ${src} Classify as 'website'(marketing/landing/pricing) or 'product'(logged-in app/dashboard). Score pillars 0-100. Website pillars:${webP}. Product pillars:${prodP}. Return ONLY raw JSON no markdown. Website:{"pageType":"website","company":"X","category":"X","plgFit":"low|medium|high","summary":"X","criticalLeak":"X","scores":{${webEx}},"quickWins":[{"title":"X","action":"X"},{"title":"X","action":"X"},{"title":"X","action":"X"}]} Product:{"pageType":"product","company":"X","category":"X","plgFit":"low|medium|high","summary":"X","criticalLeak":"X","scores":{${prodEx}},"quickWins":[{"title":"X","action":"X"},{"title":"X","action":"X"},{"title":"X","action":"X"}]}`;
+}
+
+async function runAnalysis() {
+  const url = document.getElementById("url-input").value;
+  const ok = (mode === "url" && url.length > 5) || (mode === "image" && imgB64);
+  if (!ok) return;
+  document.getElementById("error").style.display = "none";
+  document.getElementById("results").style.display = "none";
+  document.getElementById("loading").style.display = "block";
+  document.getElementById("run-btn").disabled = true;
+  const prompt = buildPrompt();
+  const content = mode === "image"
+    ? [{type:"image", source:{type:"base64", media_type:"image/png", data:imgB64}}, {type:"text", text:prompt}]
+    : prompt;
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {"Content-Type":"application/json", "anthropic-version":"2023-06-01"},
+      body: JSON.stringify({model:"claude-haiku-4-5-20251001", max_tokens:1200, messages:[{role:"user", content}]})
+    });
+    const data = await res.json();
+    const text = data?.content?.[0]?.text || "";
+    const parsed = JSON.parse(text.replace(/```json/g,"").replace(/```/g,"").trim());
+    const pillars = parsed.pageType === "product" ? PILLARS_PROD : PILLARS_WEB;
+    let total = 0, wsum = 0;
+    pillars.forEach(p => { const sc = parsed.scores?.[p.id]?.score ?? 50; total += sc * p.weight; wsum += p.weight; });
+    parsed.finalScore = Math.round(total / wsum);
+    parsed.pillars = pillars;
+    parsed.scannedAt = new Date().toLocaleString();
+    history.unshift(parsed);
+    renderResult(parsed);
+    renderHistory();
+  } catch(e) {
+    document.getElementById("error").textContent = "Analysis failed: " + e.message;
+    document.getElementById("error").style.display = "block";
+  }
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("run-btn").disabled = false;
+  updateBtn();
+}
+
+function renderResult(d) {
+  const mat = getMat(d.finalScore);
+  document.getElementById("main-donut").innerHTML = donutSVG(d.finalScore, 160, 14, 34, true);
+  document.getElementById("tags").innerHTML =
+    [mat.label, d.pageType === "product" ? "In-Product" : "Website", d.category || "", "PLG Fit: " + (d.plgFit || "")]
+    .filter(Boolean).map(t => `<span class="tag">${t}</span>`).join("");
+  document.getElementById("summary-text").textContent = d.summary;
+  document.getElementById("leak-text").textContent = d.criticalLeak;
+  document.getElementById("wins-list").innerHTML = (d.quickWins || []).map(w => `
+    <div class="win-item">
+      <div style="flex:1">
+        <div class="win-title">${w.title}</div>
+        <div class="win-action">${w.action.length > 80 ? w.action.slice(0, 80) + "…" : w.action}</div>
+      </div>
+      <button class="task-btn">Create task</button>
+    </div>`).join("");
+  document.getElementById("pillars-list").innerHTML = d.pillars.map(p => {
+    const sc = d.scores?.[p.id]?.score ?? 0, info = d.scores?.[p.id] || {};
+    return `<div class="pillar-item">
+      <div class="pillar-name">${p.label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${sc}%;background:${pColor(sc)}"></div></div>
+      <div class="bar-label">${sc}/100</div>
+      ${info.note ? `<p class="pillar-note">"${info.note}"</p>` : ""}
+      ${info.pro  ? `<div class="pillar-pro"><span style="color:#22c55e">✓</span>${info.pro}</div>` : ""}
+      ${info.con  ? `<div class="pillar-con"><span style="color:#f59e0b">⚠</span>${info.con}</div>` : ""}
+    </div>`;
+  }).join("");
+  document.getElementById("results").style.display = "block";
+}
+
+function renderHistory() {
+  const badge = document.getElementById("badge");
+  badge.textContent = history.length;
+  badge.style.display = history.length ? "flex" : "none";
+  document.getElementById("history-list").innerHTML = history.map((item, i) => `
+    <div class="hist-item" onclick="loadHistory(${i})">
+      <div class="hist-info">
+        <div class="hist-name">${item.company || "Unknown"} — ${item.category || item.pageType}</div>
+        <div class="hist-leak">${item.criticalLeak}</div>
+        <div class="hist-time">${item.scannedAt}</div>
+      </div>
+      ${donutSVG(item.finalScore, 52, 5, 13, false)}
+    </div>`).join("");
+}
+
+function loadHistory(i) {
+  renderResult(history[i]);
+  closeDrawer();
+  window.scrollTo({top: 0, behavior: "smooth"});
+}
+
+updateBtn();
+</script>
+</body>
+</html>
