@@ -249,14 +249,11 @@ async function runAnalysis() {
   document.getElementById("loading").style.display = "block";
   document.getElementById("run-btn").disabled = true;
   const prompt = buildPrompt();
-  const content = mode === "image"
-    ? [{type:"image", source:{type:"base64", media_type:"image/png", data:imgB64}}, {type:"text", text:prompt}]
-    : prompt;
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("/api/analyze", {
       method: "POST",
-      headers: {"Content-Type":"application/json", "anthropic-version":"2023-06-01"},
-      body: JSON.stringify({model:"claude-haiku-4-5-20251001", max_tokens:1200, messages:[{role:"user", content}]})
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({mode, url, imgB64, prompt})
     });
     const data = await res.json();
     const text = data?.content?.[0]?.text || "";
